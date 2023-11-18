@@ -1271,7 +1271,7 @@ elif [[ -s "${PROJECT_DIR}"/.gitlab_token ]]; then
 	curl -s \
 	--header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
 	-X POST \
-	"${GITLAB_HOST}/api/v4/projects?name=${codename}&namespace_id=${SUBGRP_ID}&visibility=public"
+	"${GITLAB_HOST}/api/v4/projects?name=${codename}_dump&namespace_id=${SUBGRP_ID}&visibility=public"
 
 	# Get Project/Repo ID
 	get_gitlab_project_id(){
