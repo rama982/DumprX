@@ -977,7 +977,7 @@ if [[ "$PUSH_TO_GITLAB" = true ]]; then
 	repo=$(printf "${brand}" | tr '[:upper:]' '[:lower:]' && echo -e "/${codename}")
 else
 	rm -rf .gitlab_token
-	repo=$(echo "${brand}"_"${codename}"_dump | tr '[:upper:]' '[:lower:]')
+	repo=$(echo "${brand}/""${codename}"_dump | tr '[:upper:]' '[:lower:]')
 fi
 
 platform=$(echo "${platform}" | tr '[:upper:]' '[:lower:]' | tr -dc '[:print:]' | tr '_' '-' | cut -c 1-35)
@@ -1149,9 +1149,12 @@ if [[ -s "${PROJECT_DIR}"/.github_token ]]; then
 	printf "\nPushing to %s via HTTPS...\nBranch:%s\n" "https://github.com/${GIT_ORG}/${repo}.git" "${branch}"
 	sleep 1
 	git remote add origin https://${GITHUB_TOKEN}@github.com/${GIT_ORG}/${repo}.git "${branch}"
-	git add -- . ':!system/' ':!vendor/'
+	git add -- . ':!system/' ':!vendor/' ':!product/'
 	git commit -sm "Add extras for ${description}"
 	git push -u origin "${branch}"
+        git add product/
+        git commit -sm "Add product for ${description}"
+        git push -u origin "${branch}"
 	git add vendor/
 	git commit -sm "Add vendor for ${description}"
 	git push -u origin "${branch}"
@@ -1208,6 +1211,22 @@ elif [[ -s "${PROJECT_DIR}"/.gitlab_token ]]; then
 
 	# Remove The Journal File Inside System/Vendor
 	find . -mindepth 2 -type d -name "\[SYS\]" -exec rm -rf {} \; 2>/dev/null
+
+	# Files larger than 62MB will be split into 47MB parts as *.aa, *.ab, etc.
+	mkdir -p "${TMPDIR}" 2>/dev/null
+	find . -size +62M | cut -d'/' -f'2-' >| "${TMPDIR}"/.largefiles
+	if [[ -s "${TMPDIR}"/.largefiles ]]; then
+		printf '#!/bin/bash\n\n' > join_split_files.sh
+		while read -r l; do
+			split -b 47M "${l}" "${l}".
+			rm -f "${l}" 2>/dev/null
+			printf "cat %s.* 2>/dev/null >> %s\n" "${l}" "${l}" >> join_split_files.sh
+			printf "rm -f %s.* 2>/dev/null\n" "${l}" >> join_split_files.sh
+		done < "${TMPDIR}"/.largefiles
+		chmod a+x join_split_files.sh 2>/dev/null
+	fi
+	rm -rf "${TMPDIR}" 2>/dev/null
+
 	printf "\nFinal Repository Should Look Like...\n" && ls -lAog
 	printf "\n\nStarting Git Init...\n"
 
@@ -1276,15 +1295,24 @@ elif [[ -s "${PROJECT_DIR}"/.gitlab_token ]]; then
 	printf "\n"
 
 	# Push to GitLab
-	while [[ ! $(curl -sL "${GITLAB_HOST}/${GIT_ORG}/${repo}/-/raw/${branch}/all_files.txt" | grep "all_files.txt") ]]
-	do
-		printf "\nPushing to %s via SSH...\nBranch:%s\n" "${GITLAB_HOST}/${GIT_ORG}/${repo}.git" "${branch}"
-		sleep 1
-		git add --all
-		git commit -asm "Add ${description}"
-		git push -u origin "${branch}"
-		sleep 1
-	done
+	printf "\nPushing to %s via SSH...\nBranch:%s\n" "${GITLAB_HOST}/${GIT_ORG}/${repo}.git" "${branch}"
+	sleep 1
+	git add -- . ':!system/' ':!vendor/' ':!product/'
+	git commit -sm "Add extras for ${description}"
+	git push -u origin "${branch}"
+	git add product/
+        git commit -sm "Add product for ${description}"
+        git push -u origin "${branch}"
+	git add vendor/
+	git commit -sm "Add vendor for ${description}"
+	git push -u origin "${branch}"
+	git add $(find -type f -name '*.apk')
+	git commit -sm "Add apps for ${description}"
+	git push -u origin "${branch}"
+	git add system/
+	git commit -sm "Add system for ${description}"
+	git push -u origin "${branch}"
+	sleep 1
 
 	# Update the Default Branch
 	curl	--request PUT \
