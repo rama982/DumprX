@@ -47,7 +47,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
 	    sleep 1
 	    echo -e ${BLUE}">> Installing Required Packages..."${NORMAL}
 	    sleep 1
-        sudo apt install -y unace unrar zip unzip p7zip-full p7zip-rar sharutils rar uudeview mpack arj cabextract device-tree-compiler liblzma-dev python3-pip brotli liblz4-tool axel gawk aria2 detox cpio rename liblz4-dev jq || abort "Setup Failed!"
+        sudo apt install -y unace unrar zip unzip p7zip-full p7zip-rar sharutils rar uudeview mpack arj cabextract device-tree-compiler liblzma-dev python3-pip brotli liblz4-tool axel gawk aria2 detox cpio rename liblz4-dev jq neofetch || abort "Setup Failed!"
 
     elif [[ "$(command -v dnf)" != "" ]]; then
 
@@ -91,7 +91,7 @@ echo -e ${PURPLE}"Distro Specific Setup Done, Now Installing pyhton Packages fro
 sleep 1
 python3 -m venv .venv
 [ -e ".venv" ] && source .venv/bin/activate
-pip install backports.lzma extract-dtb protobuf==3.20.0 pycryptodome docopt zstandard twrpdtgen future requests humanize clint lz4 pycryptodome pycryptodomex || abort "Setup Failed!"
+pip install backports.lzma extract-dtb protobuf==3.20.0 pycryptodome docopt zstandard twrpdtgen future requests humanize clint lz4 pycryptodome pycryptodomex setuptools || abort "Setup Failed!"
 pip install git+https://github.com/sebaubuntu-python/aospdtgen || abort "Setup Failed!"
 sleep 1
 

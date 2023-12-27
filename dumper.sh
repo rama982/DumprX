@@ -71,7 +71,7 @@ fi
 # Sanitize And Generate Folders
 INPUTDIR="${PROJECT_DIR}"/input		# Firmware Download/Preload Directory
 UTILSDIR="${PROJECT_DIR}"/utils		# Contains Supportive Programs
-OUTDIR="${PROJECT_DIR}"/out			# Contains Final Extracted Files
+OUTDIR=/tmp/out						# Contains Final Extracted Files
 TMPDIR="${OUTDIR}"/tmp				# Temporary Working Directory
 
 rm -rf "${TMPDIR}" 2>/dev/null
@@ -931,7 +931,7 @@ brand=$(grep -m1 -oP "(?<=^ro.product.system_ext.brand=).*" -hs system_ext/etc/b
 [[ -z "${brand}" ]] && brand=$(grep -m1 -oP "(?<=^ro.product.brand=).*" -hs {oppo_product,my_product}/build*.prop | head -1)
 [[ -z "${brand}" ]] && brand=$(grep -m1 -oP "(?<=^ro.product.brand=).*" -hs vendor/euclid/*/build.prop | head -1)
 [[ -z "${brand}" ]] && brand=$(echo "$fingerprint" | cut -d'/' -f1)
-codename=$(grep -m1 -oP "(?<=^ro.product.system_ext.device=).*" -hs system_ext/etc/build.prop | head -1)
+codename=$(grep -m1 -oP "(?<=^ro.product.product.device=).*" -hs product/etc/build.prop | head -1)
 [[ -z "${codename}" ]] && codename=$(grep -m1 -oP "(?<=^ro.product.device=).*" -hs {vendor,system,system/system}/build*.prop | head -1)
 [[ -z "${codename}" ]] && codename=$(grep -m1 -oP "(?<=^ro.vendor.product.device.oem=).*" -hs vendor/euclid/odm/build.prop | head -1)
 [[ -z "${codename}" ]] && codename=$(grep -m1 -oP "(?<=^ro.product.vendor.device=).*" -hs vendor/build*.prop | head -1)
@@ -977,7 +977,7 @@ otaver=$(grep -m1 -oP "(?<=^ro.build.version.ota=).*" -hs {vendor/euclid/product
 [[ -z "${otaver}" ]] && otaver=$(grep -m1 -oP "(?<=^ro.build.fota.version=).*" -hs {system,system/system}/build*.prop | head -1)
 [[ -z "${otaver}" ]] && otaver=undefined
 [[ -z "${branch}" ]] && branch=$(echo "${description}" | tr ' ' '-')
-transname=$(grep -m1 -oP "(?<=^ro.product.system_ext.tran.device.name.default=).*" -hs system_ext/etc/build.prop | head -1)
+transname=$(grep -m1 -oP "(?<=^ro.product.product.tran.device.name.default=).*" -hs product/etc/build.prop | head -1)
 [[ -z "${transname}" ]] && transname="Not Transsion device"
 
 if [[ "$PUSH_TO_GITLAB" = true ]]; then
@@ -1003,7 +1003,7 @@ if [[ "$is_ab" = true ]]; then
 		printf "Legacy A/B with recovery partition detected...\n"
 		twrpimg="recovery.img"
 	else
-	twrpimg="boot.img"
+	twrpimg="vendor_boot.img"
 	fi
 else
 	twrpimg="recovery.img"
@@ -1025,17 +1025,17 @@ chmod -R u+rwX ./*		#ensure final permissions
 find "$OUTDIR" -type f -printf '%P\n' | sort | grep -v ".git/" > "$OUTDIR"/all_files.txt
 
 # Generate LineageOS Trees
-if [[ "$treble_support" = true ]]; then
-        aospdtout="lineage-device-tree"
-        mkdir -p $aospdtout
-        python3 -m aospdtgen $OUTDIR -o $aospdtout
+#if [[ "$treble_support" = true ]]; then
+#        aospdtout="lineage-device-tree"
+#        mkdir -p $aospdtout
+#        python3 -m aospdtgen $OUTDIR -o $aospdtout
 
         # Remove all .git directories from aospdtout
-        rm -rf $(find $aospdtout -type d -name ".git")
+#        rm -rf $(find $aospdtout -type d -name ".git")
 
         # Regenerate all_files.txt
-        find "$OUTDIR" -type f -printf '%P\n' | sort | grep -v ".git/" > "$OUTDIR"/all_files.txt
-fi
+#        find "$OUTDIR" -type f -printf '%P\n' | sort | grep -v ".git/" > "$OUTDIR"/all_files.txt
+#fi
 
 # Generate Files having the sha1sum values of the Blobs
 function write_sha1sum(){
@@ -1125,9 +1125,9 @@ if [[ -s "${PROJECT_DIR}"/.github_token ]]; then
 	curl -sf "https://raw.githubusercontent.com/${GIT_ORG}/${repo}/${branch}/all_files.txt" 2>/dev/null && { printf "Firmware already dumped!\nGo to https://github.com/%s/%s/tree/%s\n" "${GIT_ORG}" "${repo}" "${branch}" && exit 1; }
 	# Remove The Journal File Inside System/Vendor
 	find . -mindepth 2 -type d -name "\[SYS\]" -exec rm -rf {} \; 2>/dev/null
-	# Files larger than 62MB will be split into 47MB parts as *.aa, *.ab, etc.
+	# Files larger than 99MB will be split into 47MB parts as *.aa, *.ab, etc.
 	mkdir -p "${TMPDIR}" 2>/dev/null
-	find . -size +62M | cut -d'/' -f'2-' >| "${TMPDIR}"/.largefiles
+	find . -size +99M | cut -d'/' -f'2-' >| "${TMPDIR}"/.largefiles
 	if [[ -s "${TMPDIR}"/.largefiles ]]; then
 		printf '#!/bin/bash\n\n' > join_split_files.sh
 		while read -r l; do
@@ -1220,9 +1220,9 @@ elif [[ -s "${PROJECT_DIR}"/.gitlab_token ]]; then
 	# Remove The Journal File Inside System/Vendor
 	find . -mindepth 2 -type d -name "\[SYS\]" -exec rm -rf {} \; 2>/dev/null
 
-	# Files larger than 62MB will be split into 47MB parts as *.aa, *.ab, etc.
+	# Files larger than 99MB will be split into 47MB parts as *.aa, *.ab, etc.
 	mkdir -p "${TMPDIR}" 2>/dev/null
-	find . -size +62M | cut -d'/' -f'2-' >| "${TMPDIR}"/.largefiles
+	find . -size +99M | cut -d'/' -f'2-' >| "${TMPDIR}"/.largefiles
 	if [[ -s "${TMPDIR}"/.largefiles ]]; then
 		printf '#!/bin/bash\n\n' > join_split_files.sh
 		while read -r l; do
@@ -1274,7 +1274,7 @@ elif [[ -s "${PROJECT_DIR}"/.gitlab_token ]]; then
 	curl -s \
 	--header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
 	-X POST \
-	"${GITLAB_HOST}/api/v4/projects?name=${codename}_dump&namespace_id=${SUBGRP_ID}&visibility=public"
+	"${GITLAB_HOST}/api/v4/projects?name=${codename}_dump&description=${transname}&namespace_id=${SUBGRP_ID}&visibility=public"
 
 	# Get Project/Repo ID
 	get_gitlab_project_id(){
@@ -1342,6 +1342,7 @@ elif [[ -s "${PROJECT_DIR}"/.gitlab_token ]]; then
 		{
 			printf "\n<b>Device: %s</b>" "${codename}"
 			printf "\n<b>Platform: %s</b>" "${platform}"
+                        printf "\n<b>Transsion Name: %s</b>" "${transname}"
 			printf "\n<b>Android Version:</b> %s" "${release}"
 			[ ! -z "${kernel_version}" ] && printf "\n<b>Kernel Version:</b> %s" "${kernel_version}"
 			printf "\n<b>Fingerprint:</b> %s" "${fingerprint}"
