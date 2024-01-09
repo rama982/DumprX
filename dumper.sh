@@ -986,10 +986,10 @@ xosver=$(grep -m1 -oP "(?<=^ro.tranos.version=).*" -hs product/etc/build.prop | 
 
 if [[ "$PUSH_TO_GITLAB" = true ]]; then
 	rm -rf .github_token
-	repo=$(printf "${brand}" | tr '[:upper:]' '[:lower:]' && echo -e "/${codename}")
+	repo=$(printf "${brand}" && echo -e "/${codename}")
 else
 	rm -rf .gitlab_token
-	repo=$(echo "${brand}/""${codename}"_dump | tr '[:upper:]' '[:lower:]')
+	repo=$(echo "${brand}/""${codename}"_dump)
 fi
 
 platform=$(echo "${platform}" | tr '[:upper:]' '[:lower:]' | tr -dc '[:print:]' | tr '_' '-' | cut -c 1-35)
