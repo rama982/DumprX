@@ -133,16 +133,16 @@ AFHDL="${UTILSDIR}"/downloaders/afh_dl.py
 FSCK_EROFS=${UTILSDIR}/bin/fsck.erofs
 
 # Partition List That Are Currently Supported
-PARTITIONS="system system_ext system_other systemex vendor cust odm oem factory product xrom modem dtbo dtb boot vendor_boot recovery tz oppo_product preload_common opproduct reserve india my_preload my_odm my_stock my_operator my_country my_product my_company my_engineering my_heytap my_custom my_manifest my_carrier my_region my_bigball my_version special_preload system_dlkm vendor_dlkm odm_dlkm init_boot vendor_kernel_boot odmko socko nt_log mi_ext hw_product preavs preavs preload version"
+PARTITIONS="system system_ext system_other systemex vendor cust odm oem factory product xrom dtbo dtb boot vendor_boot recovery tz oppo_product preload_common opproduct reserve india my_preload my_odm my_stock my_operator my_country my_product my_company my_engineering my_heytap my_custom my_manifest my_carrier my_region my_bigball my_version special_preload system_dlkm vendor_dlkm odm_dlkm init_boot vendor_kernel_boot odmko socko nt_log mi_ext hw_product preavs preavs preload version tr_product"
 EXT4PARTITIONS="system vendor cust odm oem factory product xrom systemex oppo_product preload_common"
-OTHERPARTITIONS="tz.mbn:tz tz.img:tz modem.img:modem md1img.img:modem NON-HLOS:modem boot-verified.img:boot recovery-verified.img:recovery dtbo-verified.img:dtbo"
+OTHERPARTITIONS="tz.mbn:tz tz.img:tz modem.img:modem NON-HLOS:modem boot-verified.img:boot recovery-verified.img:recovery dtbo-verified.img:dtbo"
 
 # NOTE: $(pwd) is ${PROJECT_DIR}
 if echo "${1}" | grep -q "${PROJECT_DIR}/input" && [[ $(find "${INPUTDIR}" -maxdepth 1 -type f -size +10M -print | wc -l) -gt 1 ]]; then
 	FILEPATH=$(printf "%s\n" "$1")		# Relative Path To Script
 	FILEPATH=$(realpath "${FILEPATH}")	# Absolute Path
-	printf "Copying Everything Into %s For Further Operations." "${TMPDIR}"
-	cp -a "${FILEPATH}"/* "${TMPDIR}"/
+	printf "Moving Everything Into %s For Further Operations." "${TMPDIR}"
+	mv "${FILEPATH}"/* "${TMPDIR}"/
 	unset FILEPATH
 elif echo "${1}" | grep -q "${PROJECT_DIR}/input/" && [[ $(find "${INPUTDIR}" -maxdepth 1 -type f -size +300M -print | wc -l) -eq 1 ]]; then
 	printf "Input Directory Exists And Contains File\n"
@@ -214,8 +214,8 @@ else
 				printf "More Than One Archive File Is Available In %s Folder.\nPlease Use Direct Archive Path Along With This Toolkit\n" "${FILEPATH}" && exit 1
 			fi
 		elif find "${FILEPATH}" -maxdepth 1 -type f | grep ".*system.ext4.tar.*\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|system-sign.img\|system.bin\|payload.bin\|.*rawprogram*\|system.sin\|.*system_.*\.sin\|system-p\|super\|UPDATE.APP\|.*.pac\|.*.nb0" | grep -q -v ".*chunk.*\.so$"; then
-			printf "Copying Everything Into %s For Further Operations." "${TMPDIR}"
-			cp -a "${FILEPATH}"/* "${TMPDIR}"/
+			printf "Moving Everything Into %s For Further Operations." "${TMPDIR}"
+			mv "${FILEPATH}"/* "${TMPDIR}"/
 			unset FILEPATH
 		else
 			printf "\e[31m BRUH: This type of firmware is not supported.\e[0m\n"
@@ -983,6 +983,11 @@ osver=$(grep -m1 -oP "(?<=^ro.os.version.release=).*" -hs product/etc/build.prop
 [[ -z "${osver}" ]] && osver="undefined"
 xosver=$(grep -m1 -oP "(?<=^ro.tranos.version=).*" -hs product/etc/build.prop | head -1)
 [[ -z "${xosver}" ]] && xosver="undefined"
+sec_patch=$(grep -m1 -oP "(?<=^ro.build.version.security_patch=).*" -hs {system,system/system}/build*.prop | head -1)
+[[ -z "${sec_patch}" ]] && sec_patch="undefined"
+xosid=$(grep -m1 -oP "(?<=^ro.build.display.id=).*" -hs tr_product/etc/build.prop | head -1)
+[[ -z "${xosid}" ]] && xosid=$(grep -m1 -oP "(?<=^ro.build.display.id=).*" -hs product/etc/build.prop | head -1)
+[[ -z "${xosid}" ]] && xosid="undefined"
 
 if [[ "$PUSH_TO_GITLAB" = true ]]; then
 	rm -rf .github_token
@@ -1001,7 +1006,7 @@ cat <<EOF > "${OUTDIR}"/README.md
 ## ${description}
 - Transsion Name: ${transname}
 - TranOS Version: ${xosver}
-- OS Version: ${osver}
+- TranOS Id: ${xosid}
 - Manufacturer: ${manufacturer}
 - Platform: ${platform}
 - Codename: ${codename}
@@ -1009,6 +1014,7 @@ cat <<EOF > "${OUTDIR}"/README.md
 - Flavor: ${flavor}
 - Release Version: ${release}
 - Kernel Version: ${kernel_version}
+- Security Patch: ${sec_patch}
 - Id: ${id}
 - Incremental: ${incremental}
 - Tags: ${tags}
@@ -1018,7 +1024,6 @@ cat <<EOF > "${OUTDIR}"/README.md
 - Locale: ${locale}
 - Screen Density: ${density}
 - Fingerprint: ${fingerprint}
-- OTA version: ${otaver}
 - Branch: ${branch}
 - Repo: ${repo}
 EOF
